@@ -814,7 +814,7 @@ function buildHome(){
   O(S,DTABLE.x+DTABLE.y-2.4,()=>{for(const s of [DSEAT_L,DSEAT_R]){box(s.x-.35,s.y-.4,.7,.45,8,WOOD.m);box(s.x-.35,s.y-.42,.7,.1,22,WOOD.d)}});
   O(S,DTABLE.x+DTABLE.w/2+DTABLE.y+DTABLE.d/2,()=>{const t=DTABLE;for(const [lx,ly] of [[t.x+.15,t.y+.15],[t.x+t.w-.35,t.y+.15],[t.x+.15,t.y+t.d-.35],[t.x+t.w-.35,t.y+t.d-.35]])box(lx,ly,.2,.2,11,WOOD.d,false);
     box(t.x,t.y,t.w,t.d,3,WOOD.l,undefined,11);box(t.x+.3,t.y+.25,t.w-.6,.35,1,'#7a2e3a',false,14);
-    if(!G.meal){const [a,b]=P(t.x+1.2,t.y+.9,14);rect(a-5,b-3,10,3,'#b07a46');rect(a-4,b-5,3,2,'#e8c080');rect(a,b-5,3,2,'#d8a060');mug(t.x+3.6,t.y+1,14);const [c,d]=P(t.x+2.5,t.y+.8,14);rect(c-1,d-7,3,7,'#e8ecf0');dot(c-2,d-9,'#e05a7a');dot(c+2,d-8,'#f0c040');dot(c,d-10,'#ffffff');dot(c+1,d-9,'#4f9a42')}
+    {const [a,b]=P(t.x+1.2,t.y+.9,14);rect(a-5,b-3,10,3,'#b07a46');rect(a-4,b-5,3,2,'#e8c080');rect(a,b-5,3,2,'#d8a060');mug(t.x+3.6,t.y+1,14);const [c,d]=P(t.x+2.5,t.y+.8,14);rect(c-1,d-7,3,7,'#e8ecf0');dot(c-2,d-9,'#e05a7a');dot(c+2,d-8,'#f0c040');dot(c,d-10,'#ffffff');dot(c+1,d-9,'#4f9a42')}
     candleOn(t.x+t.w/2,t.y+t.d/2,14)});
   O(S,9.05+6.05,()=>{box(8.3,5.4,1.5,1.3,9,'#7a2e3a');box(8.3,5.4,1.5,.3,20,'#5a1e28');box(8.3,5.4,.28,1.3,15,'#5a1e28');box(9.52,5.4,.28,1.3,15,'#5a1e28')});
   O(S,9.45+9.45,()=>plantPot(9.45,9.45,1.3));
@@ -895,8 +895,8 @@ function hideCard(key){if(cardEl&&cardKey===key){cardEl.hidden=true;clearInterva
 // ----- 식사 -----
 function startMeal(dish){if(G.meal)return;G.lock=true;LOV.busy=true;if(LUC.inBed){LUC.inBed=false;LUC.asleep=false}if(LOV.inBed){LOV.inBed=false;LOV.asleep=false}
   const begin=()=>{G.lock=true;if(LOV.scene!=='2F')sceneMove(LOV,'2F');let n=0;
-    const arrive=()=>{if(++n<2)return;G.meal={dish,until:G.t+12,burnt:/^탄 /.test(dish),fl:'w_eatk'+(Math.random()*4|0),fv:'w_eatl'+(Math.random()*4|0)};
-      setTimeout(()=>talk(mapTalk(G.meal&&G.meal.burnt?pick(MEAL_BURNT):pick(MEAL_TALK))),900/G.speed)};
+    const arrive=()=>{if(++n<2)return;G.meal={dish,until:G.t+12,burnt:/^탄 /.test(dish)};
+      setTimeout(()=>talk(mapTalk(G.meal&&G.meal.burnt?pick(MEAL_BURNT):pick(MEAL_TALK)),()=>setTimeout(()=>{if(G.meal)talk(mapTalk(pick(MEAL_TALK)))},1200/G.speed)),900/G.speed)};
     LUC.sit=null;LOV.sit=null;goTo(LUC,DSEAT_L.x,DSEAT_L.y,()=>{LUC.sit=DSEAT_L;arrive()});goTo(LOV,DSEAT_R.x,DSEAT_R.y,()=>{LOV.sit=DSEAT_R;arrive()})};
   if(G.scene!=='2F'){G.lock=false;changeScene('2F',begin)}else begin()}
 function endMeal(){const m=G.meal;G.meal=null;const add=m.burnt?30:40;G.full=clamp(G.full+add,0,100);LUC.sit=null;LOV.sit=null;G.lock=false;LOV.busy=false;LOV.until=G.t+10;
@@ -990,7 +990,7 @@ function render(){
   g.save();g.setTransform(1,0,0,1,0,0);g.drawImage(bgLayer(),0,0);g.restore();drawWallsDyn();
   const list=SCN[G.scene].objs.map(o=>({d:o.dep,f:o.fn}));
   const ents=[];if(!LUC.inBed&&LUC.scene===G.scene)ents.push(LUC);if(LOV.scene===G.scene&&!LOV.inBed)ents.push(LOV);if(G.scene==='1F')ents.push(...CUSTS);
-  for(const e of ents){const meal=G.meal&&e.sit&&G.scene==='2F';list.push({d:meal?999:e.x+e.y-(e.sit?1.2:0),f:()=>{if(!(meal&&drawMealFrame(e)))drawEnt(e)}})}
+  for(const e of ents){list.push({d:e.x+e.y-(e.sit?1.2:0),f:()=>drawEnt(e)})}
   list.sort((a,b)=>a.d-b.d);list.forEach(o=>o.f());
   fence(G.scene);if(G.scene==='1F')chandelier();
   const now=performance.now();
@@ -1002,7 +1002,7 @@ function render(){
   if(G.scene==='1F'){const [a,b]=P(5.9,10.4,0);devText(a+.5,b-15.3,G.open?'OPEN':'CLOSED','#fff',.5)}
   if(G.scene==='1F')for(const c of CUSTS)if(c.state==='wait'&&!(c.bubble&&c.bubble.until>now)){const [a,b]=headPos(c);const y=b-6+Math.sin(now/200);ctx.fillStyle='#3b2618';ctx.fillRect(a-3.5,y-7.5,7,8);ctx.fillStyle='#d9822b';ctx.fillRect(a-3,y-7,6,7);devText(a,y-1.4,'!','#fff',.6)}
   const all=new Set([LUC,LOV,...CUSTS]);for(const e of all){if(!e.bubble)continue;if(e.bubble.until<now){e.bubble=null;continue}if(e.scene!==G.scene&&!(e===LUC))continue;if(e===LUC&&LUC.scene!==G.scene)continue;
-    let [a,b]=headPos(e);if(G.meal&&e.sit&&G.scene==='2F'){const lo=e===LOV?.45:0;const p=P(e.sit.x+.3+lo,DTABLE.y+.35+lo,14);a=p[0];b=p[1]-38}bubble(a,b,e.bubble.text)}
+    let [a,b]=headPos(e);bubble(a,b,e.bubble.text)}
   if(G.scene==='1F'&&CAT.say>now){const [a,b]=P(.55,9.45,10);bubble(a,b,'냥')}
   for(let i=FLOATS.length-1;i>=0;i--){const f=FLOATS[i],t=(now-f.born)/1000;if(t>1.6){FLOATS.splice(i,1);continue}const [a,b]=headPos(f.e);ctx.globalAlpha=1-t/1.6;devText(a,b-5-t*10,f.t,'#ffd34a',.85,'#2a170d');ctx.globalAlpha=1}}
 
