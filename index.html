@@ -618,9 +618,9 @@ function update(dt){const gdt=dt*1000/MS_PER_GMIN*G.speed;G.t+=gdt;G.full=clamp(
   if(LUC.path.length)stepEnt(LUC,dt);stepEnt(LOV,dt);
   if(LOV.mode==='cook'&&G.t>=LOV.cookUntil){LOV.cookUntil=1e15;lovCookDone()}if(LOV.mode==='study'&&Math.random()<dt*.05)say(LOV,pick(STUDY),1800);
   lovBrain();apTick();
-  if(LOV.inBed&&!LUC.inBed&&!isNight()&&!LOV.asleep&&Math.random()<dt*.02)lovOutOfBed();
+  if(LOV.inBed&&!LUC.inBed&&!G.love)lovOutOfBed();
   if(LOV.inBed&&LOV.asleep&&!G.love&&G.t>=(LOV.wakeAt||0)){lovOutOfBed();say(LOV,'좋은 아침이에요.',2500)}
-  if(LOV.inBed&&!LOV.asleep&&LUC.asleep&&Math.random()<dt*.05){LOV.asleep=true;LOV.wakeAt=LUC.wakeAt}
+  if(LOV.inBed&&!LOV.asleep&&LUC.asleep&&Math.random()<dt*.15*G.speed){LOV.asleep=true;LOV.wakeAt=LUC.wakeAt}
   if(LUC.asleep&&G.t>=LUC.wakeAt&&!G.wakeShown){G.wakeShown=true;showWake()}
   if(G.meal&&G.t>=G.meal.until&&!G.talk)endMeal();
   if(G.love){for(let q=0;q<3;q++)if(Math.random()<dt*7)HEARTS.push({x:BED.x+BED.w/2+rnd(-2.4,2.4),y:BED.y+1.2+rnd(-.3,.4),born:performance.now(),vx:rnd(-8,8)});if(performance.now()>G.love.until)endLove()}
@@ -875,7 +875,7 @@ function lucIntoBed(){LUC.inBed=true;LUC.slf='';LUC.asleep=false;LUC.path=[];toa
   if(isNight()&&!LOV.inBed&&LOV.scene!=='1F'&&!LOV.busy&&Math.random()<.85){LOV.until=0;setTimeout(()=>{if(LUC.inBed&&!LOV.inBed&&!LOV.busy)lovGoBed('저도 잘래요.')},rnd(4000,12000))}}
 function lucOutOfBed(){const was=LUC.asleep;LUC.inBed=false;LUC.asleep=false;LUC.x=BEDSIDE_L.x;LUC.y=BEDSIDE_L.y;G.love=null;hideCard('love');if(was&&LOV.inBed)lovOutOfBed()}
 function goSleep(){LUC.asleep=true;G.wakeShown=false;LUC.wakeAt=isNight()?(Math.floor((G.t+(hour()>=12?1440:0))/1440)*1440+(G.fullAuto?7:8)*60):G.t+90;
-  if(LOV.inBed){LOV.asleep=true;LOV.wakeAt=LUC.wakeAt+(Math.random()<.5?-60:30)}toast('쿨쿨…')}
+  toast('쿨쿨…')}
 function startLove(){G.love={until:Infinity,t0:performance.now()};LUC.asleep=false;LOV.asleep=false}
 function endLove(){if(!G.love||G.love.out)return;G.love.out=performance.now();setTimeout(()=>{G.love=null;LUC.asleep=false;LOV.asleep=false;setTimeout(()=>talk(mapTalk(pick(PILLOW_TALK))),400)},650*3+300)}
 
@@ -1208,7 +1208,7 @@ function apTick(){
       if(ok){addDish(r.n);G.cookSkill++;say(LUC,'...안 탔다.',2500);toast(r.n+' 완성!')}else{addDish('탄 '+r.n);say(LUC,'...탔다.',2500);toast('조금 탔다… '+r.n)}save()}return}
   if(LUC.asleep){if(h>=7&&h<12){G.wakeShown=true;AP.called=0;showWake();return}
     if(!LOV.inBed&&!AP.called){AP.called=1;lovGoBed('저도 잘래요.')}
-    if(LOV.inBed&&!LOV.asleep){LOV.asleep=true;LOV.wakeAt=LUC.wakeAt}return}
+    return}
   if(!G.autoOpen){
     if(h>=9&&h<18&&!G.open&&AP.openDay!==d){AP.openDay=d;forceShop(true);return}
     if((h>=18||h<9)&&G.open&&AP.closeDay!==d){AP.closeDay=d;forceShop(false);return}}
