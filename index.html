@@ -900,8 +900,9 @@ function startMeal(dish){if(G.meal)return;G.lock=true;LOV.busy=true;if(LUC.inBed
   if(G.scene!=='2F'){G.lock=false;changeScene('2F',begin)}else begin()}
 function endMeal(){const m=G.meal;G.meal=null;const add=m.burnt?30:40;G.full=clamp(G.full+add,0,100);LUC.sit=null;LOV.sit=null;G.lock=false;LOV.busy=false;LOV.until=G.t+10;
   LUC.x=DSEAT_L.x;LUC.y=DTABLE.y+DTABLE.d+.5;LOV.x=DSEAT_R.x;LOV.y=DTABLE.y+DTABLE.d+.5;toast('잘 먹었다. ('+m.dish+') 포만감 +'+add);say(LOV,pick(NAG_FULL),2500);save()}
+const MEALP={l:[4.45,4.75],v:[6.56,4.89],s:.82};
 function drawMealFrame(e){const k=e===LUC?G.meal.fl:G.meal.fv;if(!aOK(k))return false;const im=ANI[k];const now=performance.now();const bob=((now/320+(e===LUC?0:1))|0)%2;
-  const sd=e===LOV?1:-1;const [a,c]=P(5.5+.3*sd,4.55-.3*sd,14);g.save();g.setTransform(1,0,0,1,0,0);const sq=bob?2:0,S=.9;const w=im.naturalWidth*S,h=im.naturalHeight*S;g.drawImage(im,Math.round(a*2-w/2),Math.round(c*2+4-h+sq),w,h-sq);g.restore();return true}
+  const mp=e===LOV?MEALP.v:MEALP.l;const [a,c]=P(mp[0],mp[1],14);g.save();g.setTransform(1,0,0,1,0,0);const sq=bob?2:0,S=MEALP.s;const w=im.naturalWidth*S,h=im.naturalHeight*S;g.drawImage(im,Math.round(a*2-w/2),Math.round(c*2+4-h+sq),w,h-sq);g.restore();return true}
 
 // ----- 요리 요청 (그) -----
 function lovCook(){LOV.busy=true;if(LOV.inBed){LOV.inBed=false;LOV.asleep=false;LOV.x=BEDSIDE_R.x;LOV.y=BEDSIDE_R.y;LOV.scene='BR'}say(LOV,'뭐 먹고 싶다고 했죠? 알아서 할게요.',2500);
