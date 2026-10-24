@@ -1186,5 +1186,5 @@ function drinkCoffee(){pickCoffee('커피 마시기',n=>{takeCoffee(n);G.full=cl
 function giveCoffee(){pickCoffee('커피 주기',n=>{takeCoffee(n);LOV.until=G.t+10;talk(mapTalk(pick(COFFEE_GIVE)));save()})}
 
 </script>
-<script>if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));</script></body>
+<script>if('serviceWorker' in navigator){let re=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(re)return;re=true;location.reload()});addEventListener('load',()=>navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>r.update()).catch(()=>{}))}</script></body>
 </html>
