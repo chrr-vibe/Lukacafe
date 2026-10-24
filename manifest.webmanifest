@@ -1,14 +1,17 @@
 {
+  "id": "./?app=cafe-stille",
   "name": "Café Stille",
-  "short_name": "Café Stille",
-  "start_url": "./",
+  "short_name": "카페 슈틸레",
+  "description": "루카스와 그의 작은 카페",
+  "start_url": "./?app=cafe-stille",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#24180f",
   "theme_color": "#3b2618",
   "icons": [
-    {"src": "icon-192.png", "sizes": "192x192", "type": "image/png"},
-    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"}
+    {"src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
+    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
   ]
 }

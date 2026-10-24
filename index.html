@@ -327,7 +327,7 @@ const $=id=>document.getElementById(id);
 const rnd=(a,b)=>a+Math.random()*(b-a), pick=a=>a[Math.random()*a.length|0], clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 let SC_=1,DPR=1,VW=LW,camX=-1;
 function resize(){const hud=$('hud').offsetHeight||40,minCtrl=130;const aw=Math.min(innerWidth,560),ah=innerHeight-hud-minCtrl;
-  SC_=Math.max(1,Math.min(ah/LH,aw/(LW*.7)));DPR=Math.min(3,window.devicePixelRatio||1);const cw=Math.min(aw,LW*SC_);VW=cw/SC_;
+  SC_=Math.max(.8,Math.min(ah/LH,aw/LW));DPR=Math.min(3,window.devicePixelRatio||1);const cw=Math.min(aw,LW*SC_);VW=cw/SC_;
   cv.style.width=Math.round(cw)+'px';cv.style.height=Math.round(LH*SC_)+'px';cv.width=Math.round(cw*DPR);cv.height=Math.round(LH*SC_*DPR);camX=-1}
 addEventListener('resize',resize);
 

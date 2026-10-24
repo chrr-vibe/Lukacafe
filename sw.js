@@ -1,5 +1,5 @@
 // Café Stille 오프라인 캐시 — index.html 을 고치면 VERSION 을 하나 올려 주세요.
-const VERSION = 1;
+const VERSION = 2;
 const CACHE = 'cafe-stille-v' + VERSION;
 const FILES = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
 self.addEventListener('install', e => {
