@@ -439,9 +439,12 @@ function nextLine(){const T=G.talk;if(!T)return;if(T.i>=0){const pe=T.lines[T.i]
 function mapTalk(set,c){return set.map(([w,t])=>[w==='me'?LUC:w==='p'?LOV:c,t])}
 
 // ===== 저장 =====
-function save(){try{localStorage.setItem(SAVE_KEY,JSON.stringify({t:G.t,gold:G.gold,open:G.open,sign:G.sign,speed:G.speed,auto:G.auto,autoOpen:G.autoOpen,full:G.full,dishes:G.dishes,coffees:G.coffees,cookSkill:G.cookSkill,profDay:G.profDay,served:G.served,real:Date.now()}))}catch(e){}}
+function pst(e){return {scene:e.scene,x:e.x,y:e.y,inBed:!!e.inBed,asleep:!!e.asleep,wakeAt:e.wakeAt||0}}
+function rst(e,o){if(!o||!isFinite(o.x)||!isFinite(o.y))return;Object.assign(e,{scene:o.scene||'1F',x:o.x,y:o.y,inBed:!!o.inBed,asleep:!!o.asleep,wakeAt:o.wakeAt||0,path:[],sit:null})}
+function save(){try{localStorage.setItem(SAVE_KEY,JSON.stringify({t:G.t,gold:G.gold,open:G.open,sign:G.sign,speed:G.speed,auto:G.auto,autoOpen:G.autoOpen,full:G.full,dishes:G.dishes,coffees:G.coffees,cookSkill:G.cookSkill,profDay:G.profDay,served:G.served,scene:G.scene,luc:pst(LUC),lov:pst(LOV),real:Date.now()}))}catch(e){}}
 function load(){let s=null;try{s=JSON.parse(localStorage.getItem(SAVE_KEY)||'null')}catch(e){}if(!s)return null;
   Object.assign(G,{t:s.t,gold:s.gold|0,open:!!s.open,sign:s.sign||'',speed:s.speed||1,auto:s.auto!==false,autoOpen:!!s.autoOpen,full:s.full??70,dishes:s.dishes||{},coffees:s.coffees||{},cookSkill:s.cookSkill|0,profDay:s.profDay??-1,served:s.served|0});
+  if(['1F','2F','BR'].includes(s.scene)){G.scene=s.scene;rst(LUC,s.luc);LUC.scene=G.scene;rst(LOV,s.lov)}
   const away=Math.min(7*24*3600e3,Math.max(0,Date.now()-(s.real||Date.now()))),adv=away/MS_PER_GMIN;let earned=0,cnt=0;
   if(adv>1){const t0=G.t,t1=G.t+adv;if(G.open){const end=Math.floor(t0/1440)*1440+18*60,om=Math.max(0,Math.min(t1,end)-t0);cnt=Math.floor(om/720)+(Math.random()<(om/720)%1?1:0);earned=cnt*300;G.gold+=earned;G.served+=cnt;if(t1>=end){G.open=false;G.sign=pick(SIGN_CLOSE)}}
     G.full=clamp(G.full-adv*.069,5,100);G.t=t1}
