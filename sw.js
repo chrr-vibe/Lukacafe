@@ -1,6 +1,6 @@
 // Café Stille 오프라인 캐시 — index.html 을 고치면 VERSION 을 하나 올려 주세요.
 // 페이지(html)는 인터넷이 되면 항상 새로 받아오고(네트워크 우선), 안 되면 저장본을 씁니다.
-const VERSION = 6;
+const VERSION = 7;
 const CACHE = 'cafe-stille-v' + VERSION;
 const FILES = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
 self.addEventListener('install', e => {
