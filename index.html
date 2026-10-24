@@ -446,18 +446,24 @@ function load(){let s=null;try{s=JSON.parse(localStorage.getItem(SAVE_KEY)||'nul
   Object.assign(G,{t:s.t,gold:s.gold|0,open:!!s.open,sign:s.sign||'',speed:s.speed||1,auto:s.auto!==false,autoOpen:!!s.autoOpen,full:s.full??70,dishes:s.dishes||{},coffees:s.coffees||{},cookSkill:s.cookSkill|0,profDay:s.profDay??-1,served:s.served|0});
   if(['1F','2F','BR'].includes(s.scene)){G.scene=s.scene;rst(LUC,s.luc);LUC.scene=G.scene;rst(LOV,s.lov)}
   const away=Math.min(7*24*3600e3,Math.max(0,Date.now()-(s.real||Date.now()))),adv=away/MS_PER_GMIN;let earned=0,cnt=0;
-  if(adv>1){const t0=G.t,t1=G.t+adv;if(G.open){const end=Math.floor(t0/1440)*1440+18*60,om=Math.max(0,Math.min(t1,end)-t0);cnt=Math.floor(om/720)+(Math.random()<(om/720)%1?1:0);earned=cnt*300;G.gold+=earned;G.served+=cnt;if(t1>=end){G.open=false;G.sign=pick(SIGN_CLOSE)}}
+  if(adv>1){const t0=G.t,t1=G.t+adv;if(G.open){const end=G.autoOpen?Math.floor(t0/1440)*1440+18*60:1e12,om=Math.max(0,Math.min(t1,end)-t0);cnt=Math.floor(om/720)+(Math.random()<(om/720)%1?1:0);earned=cnt*300;G.gold+=earned;G.served+=cnt;if(t1>=end&&G.autoOpen){G.open=false;G.sign=pick(SIGN_CLOSE)}}
     G.full=clamp(G.full-adv*.069,5,100);G.t=t1}
   return {away,cnt,earned}}
 
 // ===== 영업·손님 =====
 function setOpen(v){if(G.scene!=='1F'){toast('가게는 1층에서 열고 닫을 수 있어요.');return}
-  if(v&&(hour()<9||hour()>=18)){toast('영업시간은 아침 9시부터 저녁 6시까지예요.');return}if(G.lock){toast('지금은 바빠요.');return}
+  if(G.lock){toast('지금은 바빠요.');return}
   const who=(LOV.scene==='1F'&&!LOV.busy&&!LOV.guard&&Math.random()<.5)?LOV:LUC;
   const done=()=>{G.open=v;G.sign=v?pick(SIGN_OPEN):pick(SIGN_CLOSE);toast((who===LUC?'루카스':'그')+'가 팻말을 뒤집었다.<br>“'+G.sign+'”');
     if(v)G.custTimer=G.t+rnd(70,150);else CUSTS.forEach(c=>{if(c.state==='enter'||c.state==='wait'||c.state==='seated'){say(c,'아, 문 닫는구나.');leave(c)}});
     if(who===LUC)G.lock=false;else{LOV.busy=false;LOV.until=0}save()};
   if(who===LUC){G.lock=true;goTo(LUC,DOOR.x+.6,DOOR.y-.6,()=>setTimeout(done,500))}else{LOV.busy=true;LOV.sit=null;goTo(LOV,DOOR.x+.6,DOOR.y-.6,()=>{say(LOV,v?'문 열게요.':'오늘은 여기까지.');setTimeout(done,600)})}}
+function forceShop(v){closeModal();$('dlg').hidden=true;dlgCust=null;G.talk=null;G.love=null;hideCard('love');
+  if(G.meal){G.meal=null;LUC.sit=null;LOV.sit=null}
+  LUC.asleep=false;LOV.asleep=false;LUC.sit=null;LOV.sit=null;if(LUC.inBed)lucOutOfBed();if(LOV.inBed)lovOutOfBed();
+  LOV.busy=false;LOV.guard=null;LOV.mode='idle';LOV.path=[];LUC.path=[];G.lock=false;
+  toast(v?'아침 9시. 가게 열 시간이다.':'저녁 6시. 가게 닫을 시간이다.');
+  const go=()=>setOpen(v);if(G.scene!=='1F')changeScene('1F',go);else go()}
 function spawnCustomer(){const free=SEATS.filter(s=>!s.occ);if(!free.length)return;let type;
   if(G.profDay!==dayN()&&Math.random()<.3){type='prof';G.profDay=dayN()}else if(Math.random()<.1&&!CUSTS.some(c=>c.type==='kai'))type='kai';else if(Math.random()<.1&&!CUSTS.some(c=>c.type==='marc'))type='marc';else type=pick(['woman','man','old']);
   const seat=pick(free);const c=mk({id:'c'+Math.random(),type,ch:type,x:DOOR.x,y:DOOR.y,speed:1.6,state:'enter',seat,name:CUST[type].name});seat.occ=c;CUSTS.push(c);
@@ -552,7 +558,7 @@ function showOrderDlg(c){dlgCust=c;$('dTitle').textContent='주문';$('dBody').i
   $('dlg').hidden=false;$('oNo').onclick=()=>{$('dlg').hidden=true;dlgCust=null;rejectOrder(c)};$('oYes').onclick=()=>{$('dlg').hidden=true;dlgCust=null;acceptOrder(c);openCoffee()}}
 function openMenu(){modal('메뉴',`<div class="btns" style="flex-direction:column"><button class="btn ${G.open?'':'main'}" id="mOpen">${G.open?'가게 닫기':'가게 열기'}</button>
   <button class="btn" id="mSpeed">시간 흐름: ${G.speed===1?'보통 (1시간=하루)':'빠르게 ×10 (시험용)'}</button><button class="btn" id="mAuto">자동 영업: ${G.auto?'켜짐':'꺼짐'}</button>
-  <button class="btn" id="mAutoOpen">아침 9시 자동 열기: ${G.autoOpen?'켜짐':'꺼짐'}</button><button class="btn" id="mBag">가진 요리 보기</button><button class="btn" id="mHelp">도움말</button></div>
+  <button class="btn" id="mAutoOpen">아침 9시·저녁 6시 자동 열고닫기: ${G.autoOpen?'켜짐':'꺼짐'}</button><button class="btn" id="mBag">가진 요리 보기</button><button class="btn" id="mHelp">도움말</button></div>
   <div class="small" style="margin-top:8px">번 돈 ${G.gold.toLocaleString()}G · 지금까지 손님 ${G.served}명<br>자동 영업이 켜져 있으면 오래 기다린 주문은 루카스가 알아서 내려요.</div>`);
   $('mOpen').onclick=()=>{closeModal();setOpen(!G.open)};$('mSpeed').onclick=()=>{G.speed=G.speed===1?10:1;save();openMenu()};$('mAuto').onclick=()=>{G.auto=!G.auto;save();openMenu()};$('mAutoOpen').onclick=()=>{G.autoOpen=!G.autoOpen;save();openMenu()};
   $('mBag').onclick=()=>{const k=Object.keys(G.dishes);modal('가진 요리',k.length?k.map(n=>`<div>${n} × ${G.dishes[n]}</div>`).join(''):'아직 없어요. 2층 주방에서 만들 수 있어요.')};
@@ -598,9 +604,9 @@ cv.addEventListener('pointerdown',()=>{if(G.talk&&performance.now()>G.talk.next-
 // ===== 갱신 =====
 let lastT=performance.now(),saveT=0,actT=0;
 function update(dt){const gdt=dt*1000/MS_PER_GMIN*G.speed;G.t+=gdt;G.full=clamp(G.full-gdt*.069,0,100);const h=hour();
-  if(G.open&&(h>=18||h<9)){G.open=false;G.sign=pick(SIGN_CLOSE);toast('여섯 시. 팻말이 뒤집혔다.<br>“'+G.sign+'”');CUSTS.forEach(c=>{if(c.state==='wait'||c.state==='enter'||c.state==='seated')leave(c)});save()}
-  if(G.autoOpen&&!G.open&&h>=9&&h<9.2&&G.scene==='1F'&&!G.lock&&G.autoOpenDay!==dayN()){G.autoOpenDay=dayN();setOpen(true)}
-  if(G.open&&G.t>=G.custTimer&&h>=9&&h<17.5){spawnCustomer();G.custTimer=G.t+(-Math.log(Math.random()+1e-6))*720}
+  if(G.autoOpen&&G.open&&h>=18&&h<18.5&&G.autoCloseDay!==dayN()){G.autoCloseDay=dayN();forceShop(false)}
+  if(G.autoOpen&&!G.open&&h>=9&&h<9.5&&G.autoOpenDay!==dayN()){G.autoOpenDay=dayN();forceShop(true)}
+  if(G.open&&G.t>=G.custTimer){spawnCustomer();G.custTimer=G.t+(-Math.log(Math.random()+1e-6))*720}
   for(const c of CUSTS){stepEnt(c,dt);if(c.state==='seated'&&G.t>=c.until)makeOrder(c);if(c.state==='wait'&&G.auto&&G.t-c.waitSince>36)acceptOrder(c);
     if(c.state==='drink'&&G.t>=c.until){say(c,'잘 마셨어요.',2000);leave(c)}if(c.state==='drink'&&Math.random()<dt*.04)say(c,pick(CUST_DRINK),1800)}
   for(const o of [...G.orders])if(G.auto&&G.t-o.c.waitSince>60&&$('modal').hidden)serve(o,null,true);
@@ -717,7 +723,7 @@ function renderActs(){const a=computeActs(),key=a.map(x=>x[0]).join('|');if(key=
   const map={};a.forEach((x,i)=>map[i]=()=>{actKey='';x[1]()});bindList(box,map)}
 function openMenu(){
   modal('메뉴',li([['st','상태'],['open',G.open?'가게 닫기':'가게 열기',G.scene==='1F'?'':'1층에서'],['bag','가진 요리',Object.values(G.dishes).reduce((a,b)=>a+b,0)||''],
-    ['spd','시간 흐름',G.speed===1?'보통':'×10'],['auto','자동 영업',G.auto?'켜짐':'꺼짐'],['ao','9시 자동 열기',G.autoOpen?'켜짐':'꺼짐'],['help','도움말']]));
+    ['spd','시간 흐름',G.speed===1?'보통':'×10'],['auto','자동 영업',G.auto?'켜짐':'꺼짐'],['ao','9시·6시 자동 영업',G.autoOpen?'켜짐':'꺼짐'],['help','도움말']]));
   bindList($('mBody'),{st:openStatus,open:()=>{closeModal();setOpen(!G.open)},bag:openBag,spd:()=>{G.speed=G.speed===1?10:1;save();openMenu()},auto:()=>{G.auto=!G.auto;save();openMenu()},ao:()=>{G.autoOpen=!G.autoOpen;save();openMenu()},help:openHelp})}
 function openStatus(){const lovWhere=LOV.inBed?(LOV.asleep?'자는 중':'침대'):LOV.mode==='study'?'논문 쓰는 중':LOV.mode==='cook'?'요리 중':LOV.guard?'카이 감시 중':'곁에';
   modal('상태',`<div class="srow"><span class="sn">루카스</span>${LUC.inBed?(LUC.asleep?'자는 중':'누워 있음'):LUC.inCounter?'카운터':'돌아다니는 중'}</div>
@@ -874,12 +880,7 @@ function startLove(){G.love={until:Infinity,t0:performance.now()};LUC.asleep=fal
 function endLove(){if(!G.love||G.love.out)return;G.love.out=performance.now();setTimeout(()=>{G.love=null;LUC.asleep=false;LOV.asleep=false;setTimeout(()=>talk(mapTalk(pick(PILLOW_TALK))),400)},650*3+300)}
 
 // ----- 아침 (깨우기 화면) -----
-function showWake(){const both=LOV.inBed&&LOV.asleep;const frames=both?['c_wake1','c_wake2']:['w_ksl0','w_ksl1'];let k=0;
-  modal('아침',`<div style="text-align:center"><img id="wakeImg" style="width:100%;max-width:340px;image-rendering:pixelated;border:3px solid var(--ink);background:#fff" src="${ANIM[frames[0]]}"></div><div class="small" style="text-align:center;margin-top:6px">${both?'둘 다 아직 꿈속…':'루카스가 아직 자고 있다…'}</div>`+li([['wake','▶ 눌러서 깨우기']]));
-  clearInterval(G.wakeTm);G.wakeTm=setInterval(()=>{const el=$('wakeImg');if(!el){clearInterval(G.wakeTm);return}k=(k+1)%frames.length;el.src=ANIM[frames[k]]},900);
-  const wake=()=>{clearInterval(G.wakeTm);closeModal();LUC.asleep=false;lucOutOfBed();say(LUC,'...아침이네.',2500);if(LOV.inBed){lovOutOfBed();say(LOV,'좋은 아침이에요, 루카.',2600)}};
-  bindList($('mBody'),{wake});$('wakeImg').onclick=wake;
-  G.wakeAuto=setTimeout(()=>{if(G.auto&&LUC.asleep&&!$('modal').hidden&&$('wakeImg'))wake()},90000)}
+function showWake(){clearInterval(G.wakeTm);const both=LOV.inBed&&LOV.asleep;LUC.asleep=false;lucOutOfBed();say(LUC,'...아침이네.',2500);if(both){lovOutOfBed();say(LOV,'좋은 아침이에요, 루카.',2600)}}
 
 // ----- 떠 있는 그림 카드 -----
 let cardEl=null,cardKey='',cardTm=0;
