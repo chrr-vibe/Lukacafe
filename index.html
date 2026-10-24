@@ -427,7 +427,7 @@ const LUC=mk({id:'luc',ch:'luc',x:7.2,y:1.7,speed:2.6,name:'루카스'});
 const LOV=mk({id:'lov',ch:'lov',x:8.7,y:7.6,speed:2,name:'그'});
 let CUSTS=[];
 function goTo(e,x,y,cb){e.path=findPath(e.scene,e.x,e.y,x,y);e.onArrive=cb||null}
-function stepEnt(e,dt){e.moving=false;if(!e.path.length)return;const p=e.path[0],dx=p.x-e.x,dy=p.y-e.y,d=Math.hypot(dx,dy),s=e.speed*dt;e.moving=true;e.face=(dx-dy)<0?-1:1;
+function stepEnt(e,dt){e.moving=false;if(!e.path.length)return;const p=e.path[0],dx=p.x-e.x,dy=p.y-e.y,d=Math.hypot(dx,dy),s=e.speed*dt*G.speed;e.moving=true;e.face=(dx-dy)<0?-1:1;
   if(d<=s){e.x=p.x;e.y=p.y;e.path.shift();if(!e.path.length&&e.onArrive){const f=e.onArrive;e.onArrive=null;f()}}else{e.x+=dx/d*s;e.y+=dy/d*s}}
 function say(e,text,ms){e.bubble={text,until:performance.now()+(ms||Math.min(5200,2200+text.length*70))}}
 const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
@@ -435,7 +435,7 @@ const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 // ===== 대화 =====
 function talk(lines,cb){if(G.talk)return false;G.talk={lines,i:-1,cb,next:0};nextLine();return true}
 function nextLine(){const T=G.talk;if(!T)return;if(T.i>=0){const pe=T.lines[T.i][0];if(pe.bubble)pe.bubble.until=performance.now()+(T.i+1>=T.lines.length?900:0)}
-  T.i++;if(T.i>=T.lines.length){G.talk=null;if(T.cb)T.cb();return}const [e,t]=T.lines[T.i];const d=Math.min(4600,1900+t.length*75);say(e,t,d+400);T.next=performance.now()+d}
+  T.i++;if(T.i>=T.lines.length){G.talk=null;if(T.cb)T.cb();return}const [e,t]=T.lines[T.i];const d=Math.min(4600,1900+t.length*75);say(e,t,(d+400)/G.speed);T.next=performance.now()+d/G.speed}
 function mapTalk(set,c){return set.map(([w,t])=>[w==='me'?LUC:w==='p'?LOV:c,t])}
 
 // ===== 저장 =====
@@ -857,7 +857,7 @@ function lovBrain(){
   if(LOV.guard&&!LOV.busy&&!LOV.path.length){if(!CUSTS.includes(LOV.guard)||LOV.guard.state==='leave'){LOV.guard=null;LOV.mode='idle';say(LOV,'흥.',1500)}else return}
   if(LOV.busy||LOV.path.length||G.meal||G.love||LOV.inBed)return;
   const h=hour(),night=h>=22.5||h<6.5;
-  if(night&&LOV.scene!=='1F'&&(LUC.inBed||G.scene!=='1F')&&(LUC.inBed||Math.random()<.4)){lovGoBed(LUC.inBed?'저도 잘래요.':null);return}
+  if(night&&LOV.scene!=='1F'&&LUC.inBed){lovGoBed('저도 잘래요.');return}
   if(LOV.scene!==G.scene){if(!LOV.followAt)LOV.followAt=performance.now()+2500;if(performance.now()>LOV.followAt){LOV.followAt=0;sceneMove(LOV,G.scene);LOV.mode='idle';say(LOV,pick(['같이 가요.','저도 갈래요.','어디 가요?']),2000)}return}
   if(G.t<LOV.until)return;
   if(G.scene==='1F'){const kai=CUSTS.find(c=>c.type==='kai'&&c.state!=='leave'&&c.sit);if(kai){kaiEvent(kai);return}
@@ -895,7 +895,7 @@ function hideCard(key){if(cardEl&&cardKey===key){cardEl.hidden=true;clearInterva
 function startMeal(dish){if(G.meal)return;G.lock=true;LOV.busy=true;if(LUC.inBed){LUC.inBed=false;LUC.asleep=false}if(LOV.inBed){LOV.inBed=false;LOV.asleep=false}
   const begin=()=>{G.lock=true;if(LOV.scene!=='2F')sceneMove(LOV,'2F');let n=0;
     const arrive=()=>{if(++n<2)return;G.meal={dish,until:G.t+12,burnt:/^탄 /.test(dish),fl:'w_eatk'+(Math.random()*4|0),fv:'w_eatl'+(Math.random()*4|0)};
-      setTimeout(()=>talk(mapTalk(G.meal&&G.meal.burnt?pick(MEAL_BURNT):pick(MEAL_TALK))),900)};
+      setTimeout(()=>talk(mapTalk(G.meal&&G.meal.burnt?pick(MEAL_BURNT):pick(MEAL_TALK))),900/G.speed)};
     LUC.sit=null;LOV.sit=null;goTo(LUC,DSEAT_L.x,DSEAT_L.y,()=>{LUC.sit=DSEAT_L;arrive()});goTo(LOV,DSEAT_R.x,DSEAT_R.y,()=>{LOV.sit=DSEAT_R;arrive()})};
   if(G.scene!=='2F'){G.lock=false;changeScene('2F',begin)}else begin()}
 function endMeal(){const m=G.meal;G.meal=null;const add=m.burnt?30:40;G.full=clamp(G.full+add,0,100);LUC.sit=null;LOV.sit=null;G.lock=false;LOV.busy=false;LOV.until=G.t+10;
@@ -1206,7 +1206,9 @@ function apTick(){
   const h=hour(),d=dayN();
   if(AP.cookEnd){if(G.t>=AP.cookEnd){AP.cookEnd=0;LUC.cooking=false;const r=pick(RECIPES),ok=Math.random()<cookRate();
       if(ok){addDish(r.n);G.cookSkill++;say(LUC,'...안 탔다.',2500);toast(r.n+' 완성!')}else{addDish('탄 '+r.n);say(LUC,'...탔다.',2500);toast('조금 탔다… '+r.n)}save()}return}
-  if(LUC.asleep){if(h>=7&&h<12){G.wakeShown=true;showWake()}return}
+  if(LUC.asleep){if(h>=7&&h<12){G.wakeShown=true;AP.called=0;showWake();return}
+    if(!LOV.inBed&&!AP.called){AP.called=1;lovGoBed('저도 잘래요.')}
+    if(LOV.inBed&&!LOV.asleep){LOV.asleep=true;LOV.wakeAt=LUC.wakeAt}return}
   if(!G.autoOpen){
     if(h>=9&&h<18&&!G.open&&AP.openDay!==d){AP.openDay=d;forceShop(true);return}
     if((h>=18||h<9)&&G.open&&AP.closeDay!==d){AP.closeDay=d;forceShop(false);return}}
@@ -1215,8 +1217,7 @@ function apTick(){
   // 밤: 침대로
   if(h>=23||h<7){
     if(LUC.inBed){if(!AP.bedAt)AP.bedAt=now;
-      if(!LOV.inBed&&!AP.called&&now-AP.bedAt>3000){AP.called=1;lovGoBed('저도 잘래요.')}
-      if(LOV.inBed||now-AP.bedAt>20000){AP.bedAt=0;AP.called=0;goSleep()}return}
+      if(now-AP.bedAt>2000/G.speed){AP.bedAt=0;AP.called=0;goSleep()}return}
     if(!apHop('BR'))return;if(!apNear(BEDSIDE_L.x,BEDSIDE_L.y)){apWalk(BEDSIDE_L.x,BEDSIDE_L.y);return}
     lucIntoBed();return}
   // 아침: 침대에서 일어나기
